@@ -12,6 +12,21 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.owner()]),
+  Video: a
+    .model({
+      name: a.string(),
+      url: a.string(),
+      clips: a.hasMany("Clip", "name"),
+    })
+    .authorization((allow) => [allow.owner()]),
+  Clip: a
+    .model({
+      startTime: a.float(),
+      endTime: a.float(),
+      name: a.string(),
+      video: a.belongsTo("Video", "name"),
+    })
+    .authorization((allow) => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
