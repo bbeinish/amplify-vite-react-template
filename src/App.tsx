@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import VideoView from "./VideoView";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
@@ -9,7 +9,7 @@ function App() {
   const [selectedVideo, setSelectedVideo] = useState<
     Schema["Video"]["type"] | null
   >(null);
-  const [videos, setVideos] = useState<Array<Schema["Video"]["type"]>>([]);
+  const [videos] = useState<Array<Schema["Video"]["type"]>>([]);
 
   // useEffect(() => {
   //   client.models.Video.observeQuery().subscribe({
