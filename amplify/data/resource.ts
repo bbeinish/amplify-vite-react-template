@@ -16,17 +16,14 @@ const schema = a.schema({
     .model({
       name: a.string(),
       url: a.string(),
-      clips: a.hasMany("Clip", "name"),
+      clips: a.ref("Clip").array(),
     })
     .authorization((allow) => [allow.owner()]),
-  Clip: a
-    .model({
-      startTime: a.float(),
-      endTime: a.float(),
-      name: a.string(),
-      video: a.belongsTo("Video", "name"),
-    })
-    .authorization((allow) => [allow.owner()]),
+  Clip: a.customType({
+    startTime: a.float(),
+    endTime: a.float(),
+    name: a.string(),
+  }),
 });
 
 export type Schema = ClientSchema<typeof schema>;

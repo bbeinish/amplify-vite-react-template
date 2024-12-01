@@ -1,26 +1,30 @@
-/* import { useEffect, useState } from "react";
-import { useAuthenticator } from "@aws-amplify/ui-react"; */
-// import type { Schema } from "../amplify/data/resource";
-// import { generateClient } from "aws-amplify/data";
-
 import React, { useRef, useEffect, useState } from "react";
 import videojs from "video.js";
-import "video.js/dist/video-js.css";
 import Player from "video.js/dist/types/player";
+import "video.js/dist/video-js.css";
 import "videojs-youtube";
+import type { Schema } from "../amplify/data/resource";
 
-// const client = generateClient<Schema>();
+interface VideoViewProps {
+  initialVideo: Schema["Video"]["type"];
+  onSave: (video: Schema["Video"]["type"]) => void;
+  onCancel: () => void;
+}
 
-function App() {
-  const [videoSrc, setVideoSrc] = useState<string>("");
+function VideoView({ initialVideo, onSave, onCancel }: VideoViewProps) {
+  const [videoSrc, setVideoSrc] = useState<string | null | undefined>(
+    initialVideo.url
+  );
   const [videoType, setVideoType] = useState<string>("");
-  const [clipStart, setClipStart] = useState<number | null>(null);
-  const [clipEnd, setClipEnd] = useState<number | null>(null);
+  const [clipStart, setClipStart] = useState<number | null | undefined>(null);
+  const [clipEnd, setClipEnd] = useState<number | null | undefined>(null);
   const [clipName, setClipName] = useState<string>("");
-  const [clips, setClips] = useState<
-    Array<{ name: string; start: number; end: number }>
-  >([]);
-  const [videoName, setVideoName] = useState<string>("");
+  const [clips, setClips] = useState<Array<Schema["Clip"]["type"]> | null>(
+    new Array<Schema["Clip"]["type"]>()
+  );
+  const [videoName, setVideoName] = useState<string | null | undefined>(
+    initialVideo.name
+  );
   const videoNode = useRef<HTMLVideoElement | null>(null);
   const player = useRef<Player | null>(null);
 
@@ -70,20 +74,14 @@ function App() {
     };
   }, [videoSrc, videoType]); // Dependency array includes videoSrc and videoType
 
-  // useEffect(() => {
-  //   if (player.current) {
-  //     player.current.src({ src: videoSrc, type: videoType });
-  //   }
-  // }, [videoSrc, videoType]);
-
-  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files[0]) {
-      const url = URL.createObjectURL(files[0]);
-      setVideoSrc(url);
-      setVideoType(files[0].type);
-    }
-  };
+  //   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //     const files = event.target.files;
+  //     if (files && files[0]) {
+  //       const url = URL.createObjectURL(files[0]);
+  //       setVideoSrc(url);
+  //       setVideoType(files[0].type);
+  //     }
+  //   };
 
   const handleLink = (url: string) => {
     if (url && (url.includes("youtube.com") || url.includes("youtu.be"))) {
@@ -111,10 +109,15 @@ function App() {
     if (
       clipStart !== null &&
       clipEnd !== null &&
-      clipStart < clipEnd &&
+      clipStart! < clipEnd! &&
       clipName
     ) {
-      setClips([...clips, { name: clipName, start: clipStart, end: clipEnd }]);
+      const newClip: Schema["Clip"]["type"] = {
+        name: clipName,
+        startTime: clipStart,
+        endTime: clipEnd,
+      };
+      setClips([...clips!, newClip]);
       setClipStart(null);
       setClipEnd(null);
       setClipName("");
@@ -125,25 +128,42 @@ function App() {
     }
   };
 
-  const handleClipClick = (clip: {
-    name: string;
-    start: number;
-    end: number;
-  }) => {
+  const handleClipClick = (clip: Schema["Clip"]["type"]) => {
     if (player.current) {
-      player.current.currentTime(clip.start);
+      player.current.currentTime(clip.startTime!);
     }
   };
 
   const handleDeleteClip = (index: number) => {
-    setClips(clips.filter((_, i) => i !== index));
+    setClips(clips!.filter((_, i) => i !== index));
+  };
+
+  const handleSave = () => {
+    if (!videoName || !videoSrc) {
+      alert("Please provide a video name and load a video first");
+      return;
+    }
+
+    onSave({
+      name: videoName,
+      url: videoSrc,
+      clips: clips,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
   };
 
   return (
     <div className="main-container">
       <div className="video-container">
         <div>
-          <input type="file" accept="video/mp4" onChange={handleUpload} />
+          <input
+            type="text"
+            placeholder="Video Name"
+            value={videoName || ""}
+            onChange={(e) => setVideoName(e.target.value)}
+          />
           <button
             onClick={() => {
               const url = prompt("Enter video URL:");
@@ -182,34 +202,31 @@ function App() {
         <div>
           <p>
             Current Clip Start:{" "}
-            {clipStart !== null ? clipStart.toFixed(2) + "s" : "N/A"} | Current
-            Clip End: {clipEnd !== null ? clipEnd.toFixed(2) + "s" : "N/A"}
+            {clipStart !== null ? clipStart!.toFixed(2) + "s" : "N/A"} | Current
+            Clip End: {clipEnd !== null ? clipEnd!.toFixed(2) + "s" : "N/A"}
           </p>
+        </div>
+        <div className="action-buttons">
+          <button onClick={handleSave}>Save Video and Clips</button>
+          <button onClick={onCancel}>Cancel</button>
         </div>
       </div>
       <div className="sidebar">
         <div>
-          <input
-            type="text"
-            placeholder="Video Name"
-            value={videoName}
-            onChange={(e) => setVideoName(e.target.value)}
-          />
-        </div>
-        <div>
           <h2>Clips</h2>
           <ul>
-            {clips
-              .sort((a, b) => a.start - b.start)
-              .map((clip, index) => (
-                <li key={index}>
-                  <span onClick={() => handleClipClick(clip)}>
-                    <b>{clip.name}:</b> Start - {clip.start.toFixed(2)}s, End -{" "}
-                    {clip.end.toFixed(2)}s
-                  </span>
-                  <button onClick={() => handleDeleteClip(index)}>X</button>
-                </li>
-              ))}
+            {clips &&
+              clips
+                .sort((a, b) => a.startTime! - b.startTime!)
+                .map((clip, index) => (
+                  <li key={index}>
+                    <span onClick={() => handleClipClick(clip)}>
+                      <b>{clip.name}:</b> Start - {clip.startTime!.toFixed(2)}s,
+                      End - {clip.endTime!.toFixed(2)}s
+                    </span>
+                    <button onClick={() => handleDeleteClip(index)}>X</button>
+                  </li>
+                ))}
           </ul>
         </div>
       </div>
@@ -217,4 +234,4 @@ function App() {
   );
 }
 
-export default App;
+export default VideoView;
