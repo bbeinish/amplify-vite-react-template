@@ -12,6 +12,11 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.owner()]),
+  Clip: a.customType({
+    startTime: a.float(),
+    endTime: a.float(),
+    name: a.string(),
+  }),
   Video: a
     .model({
       name: a.string(),
@@ -19,11 +24,6 @@ const schema = a.schema({
       clips: a.ref("Clip").array(),
     })
     .authorization((allow) => [allow.owner()]),
-  Clip: a.customType({
-    startTime: a.float(),
-    endTime: a.float(),
-    name: a.string(),
-  }),
 });
 
 export type Schema = ClientSchema<typeof schema>;

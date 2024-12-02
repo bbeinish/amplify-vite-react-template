@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import VideoView from "./VideoView";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 
 const client = generateClient<Schema>();
 
@@ -9,22 +10,23 @@ function App() {
   const [selectedVideo, setSelectedVideo] = useState<
     Schema["Video"]["type"] | null
   >(null);
-  const [videos] = useState<Array<Schema["Video"]["type"]>>([]);
+  const [videos, setVideos] = useState<Array<Schema["Video"]["type"]>>([]);
+  const { signOut } = useAuthenticator();
 
-  // useEffect(() => {
-  //   client.models.Video.observeQuery().subscribe({
-  //     next: ({ items }) => setVideos(items),
-  //   });
-  // }, []);
+  useEffect(() => {
+    client.models.Video.observeQuery().subscribe({
+      next: ({ items }) => setVideos(items),
+    });
+  }, []);
 
   const handleNewVideo = async () => {
     const video: Schema["Video"]["type"] = {
       name: "Sample Video",
       url: null,
       clips: new Array<Schema["Clip"]["type"]>(),
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      id: "",
+      createdAt: "",
+      updatedAt: "",
     };
     setSelectedVideo(video);
   };
@@ -64,6 +66,7 @@ function App() {
           </div>
         ))}
       </div>
+      <button onClick={signOut}>Sign out</button>
     </div>
   );
 }

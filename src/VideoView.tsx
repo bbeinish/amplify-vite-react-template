@@ -4,6 +4,9 @@ import Player from "video.js/dist/types/player";
 import "video.js/dist/video-js.css";
 import "videojs-youtube";
 import type { Schema } from "../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
+
+const client = generateClient<Schema>();
 
 interface VideoViewProps {
   initialVideo: Schema["Video"]["type"];
@@ -11,77 +14,64 @@ interface VideoViewProps {
   onCancel: () => void;
 }
 
-function VideoView({ initialVideo, onSave, onCancel }: VideoViewProps) {
+function VideoView({ initialVideo, onCancel }: VideoViewProps) {
   const [videoSrc, setVideoSrc] = useState<string | null | undefined>(
     initialVideo.url
   );
-  const [videoType, setVideoType] = useState<string>("");
+  const [videoType, setVideoType] = useState<string>(() => {
+    if (
+      initialVideo.url?.includes("youtube.com") ||
+      initialVideo.url?.includes("youtu.be")
+    ) {
+      return "video/youtube";
+    }
+    return initialVideo.url ? "video/mp4" : "";
+  });
   const [clipStart, setClipStart] = useState<number | null | undefined>(null);
   const [clipEnd, setClipEnd] = useState<number | null | undefined>(null);
   const [clipName, setClipName] = useState<string>("");
-  const [clips, setClips] = useState<Array<Schema["Clip"]["type"]> | null>(
-    new Array<Schema["Clip"]["type"]>()
-  );
+  const [clips, setClips] = useState<Schema["Clip"]["type"][]>();
   const [videoName, setVideoName] = useState<string | null | undefined>(
     initialVideo.name
   );
   const videoNode = useRef<HTMLVideoElement | null>(null);
   const player = useRef<Player | null>(null);
 
-  useEffect(() => {
-    if (videoNode.current) {
-      player.current = videojs(videoNode.current, {}, () => {
+  const setupPlayer = () => {
+    if (!videoNode.current || !videoSrc) return;
+
+    player.current = videojs(
+      videoNode.current,
+      {
+        techOrder: ["youtube", "html5"],
+        sources: [
+          {
+            src: videoSrc,
+            type: videoType,
+          },
+        ],
+      },
+      () => {
         console.log("Player is ready");
-      });
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (initialVideo && initialVideo.clips) {
+      const validClips = initialVideo.clips.filter(
+        (clip): clip is Schema["Clip"]["type"] =>
+          clip !== null && clip !== undefined
+      );
+      setClips(validClips);
     }
 
     return () => {
       if (player.current) {
-        player.current.dispose();
+        // player.current.dispose();
       }
     };
   }, []);
-
-  useEffect(() => {
-    // Dispose of existing player first
-    if (player.current) {
-      player.current.dispose();
-    }
-
-    // Reinitialize player with new source
-    if (videoNode.current) {
-      player.current = videojs(
-        videoNode.current,
-        {
-          techOrder: ["youtube", "html5"],
-          sources: [
-            {
-              src: videoSrc,
-              type: videoType,
-            },
-          ],
-        },
-        () => {
-          console.log("Player is ready");
-        }
-      );
-    }
-
-    return () => {
-      if (player.current) {
-        player.current.dispose();
-      }
-    };
-  }, [videoSrc, videoType]); // Dependency array includes videoSrc and videoType
-
-  //   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //     const files = event.target.files;
-  //     if (files && files[0]) {
-  //       const url = URL.createObjectURL(files[0]);
-  //       setVideoSrc(url);
-  //       setVideoType(files[0].type);
-  //     }
-  //   };
 
   const handleLink = (url: string) => {
     if (url && (url.includes("youtube.com") || url.includes("youtu.be"))) {
@@ -144,14 +134,20 @@ function VideoView({ initialVideo, onSave, onCancel }: VideoViewProps) {
       return;
     }
 
-    onSave({
-      name: videoName,
-      url: videoSrc,
-      clips: clips,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    if (initialVideo.id !== "") {
+      client.models.Video.update({
+        id: initialVideo.id,
+        name: videoName,
+        clips: clips,
+      });
+    } else {
+      client.models.Video.create({
+        url: videoSrc,
+        name: videoName,
+        clips: clips,
+      });
+    }
+    onCancel();
   };
 
   return (
@@ -164,19 +160,26 @@ function VideoView({ initialVideo, onSave, onCancel }: VideoViewProps) {
             value={videoName || ""}
             onChange={(e) => setVideoName(e.target.value)}
           />
-          <button
-            onClick={() => {
-              const url = prompt("Enter video URL:");
-              if (url) handleLink(url);
-            }}
-          >
-            Link Video
-          </button>
+          {!initialVideo.url && !videoSrc && (
+            <button
+              onClick={() => {
+                const url = prompt("Enter video URL:");
+                if (url) handleLink(url);
+              }}
+            >
+              Link Video
+            </button>
+          )}
         </div>
         {videoSrc && (
           <div data-vjs-player>
             <video
-              ref={videoNode}
+              ref={(node) => {
+                videoNode.current = node;
+                if (node) {
+                  setupPlayer();
+                }
+              }}
               id="video-player"
               className="video-js vjs-default-skin"
               controls
