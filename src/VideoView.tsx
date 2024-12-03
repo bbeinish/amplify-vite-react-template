@@ -5,6 +5,7 @@ import "video.js/dist/video-js.css";
 import "videojs-youtube";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
+import "./VideoView.css";
 
 const client = generateClient<Schema>();
 

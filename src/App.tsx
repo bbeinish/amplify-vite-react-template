@@ -3,6 +3,8 @@ import VideoView from "./VideoView";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useAuthenticator } from "@aws-amplify/ui-react";
+import Select from "react-select";
+import { MultiValue } from "react-select";
 
 const client = generateClient<Schema>();
 
@@ -11,12 +13,22 @@ function App() {
     Schema["Video"]["type"] | null
   >(null);
   const [videos, setVideos] = useState<Array<Schema["Video"]["type"]>>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const { signOut } = useAuthenticator();
 
   useEffect(() => {
     client.models.Video.observeQuery().subscribe({
       next: ({ items }) => setVideos(items),
     });
+  }, []);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      const response = await client.models.Tag.list();
+      setAllTags(response.data.map((tag) => tag.name!));
+    };
+    fetchTags();
   }, []);
 
   const handleNewVideo = async () => {
@@ -45,6 +57,22 @@ function App() {
     client.models.Video.create(savedVideo);
   };
 
+  const tagOptions = allTags.map((tag) => ({ value: tag, label: tag }));
+
+  const handleTagChange = (
+    selectedOptions: MultiValue<{ value: string; label: string }>
+  ) => {
+    setSelectedTags(
+      selectedOptions ? selectedOptions.map((opt) => opt.value) : []
+    );
+  };
+
+  const filteredVideos = videos.filter(
+    (video) =>
+      selectedTags.length === 0 ||
+      selectedTags.every((tag) => video.tags?.includes(tag))
+  );
+
   if (selectedVideo) {
     return (
       <VideoView
@@ -59,8 +87,17 @@ function App() {
     <div className="video-list-container">
       <h1>My Videos</h1>
       <button onClick={handleNewVideo}>Create New Video</button>
+      <div className="tag-selection">
+        <Select
+          isMulti
+          options={tagOptions}
+          onChange={handleTagChange}
+          placeholder="Filter by tags..."
+          className="tag-select"
+        />
+      </div>
       <div className="video-list">
-        {videos
+        {filteredVideos
           .sort(
             (a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime()
           )
