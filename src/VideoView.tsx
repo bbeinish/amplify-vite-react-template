@@ -37,6 +37,10 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
   const [videoDate, setVideoDate] = useState<string | null | undefined>(
     initialVideo.date
   );
+  const [tags, setTags] = useState<string[]>(initialVideo.tags ?? []);
+  const [newTag, setNewTag] = useState<string>("");
+  const [allTags, setAllTags] = useState<string[]>([]);
+
   const videoNode = useRef<HTMLVideoElement | null>(null);
   const player = useRef<Player | null>(null);
 
@@ -74,6 +78,14 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
         // player.current.dispose();
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      const response = await client.models.Tag.list();
+      setAllTags(response.data.map((tag) => tag.name!));
+    };
+    fetchTags();
   }, []);
 
   const handleLink = (url: string) => {
@@ -131,6 +143,28 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
     setClips(clips!.filter((_, i) => i !== index));
   };
 
+  const handleAddTag = async () => {
+    if (newTag && !tags.includes(newTag)) {
+      setTags([...tags, newTag]);
+      if (!allTags.includes(newTag)) {
+        // Save new tag to database
+        await client.models.Tag.create({ name: newTag });
+        setAllTags([...allTags, newTag]);
+      }
+      setNewTag("");
+    }
+  };
+
+  const handleSelectExistingTag = (tagName: string) => {
+    if (!tags.includes(tagName)) {
+      setTags([...tags, tagName]);
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
+
   const handleSave = () => {
     if (!videoName || !videoSrc) {
       alert("Please provide a video name and load a video first");
@@ -143,6 +177,7 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
         name: videoName,
         clips: clips,
         date: videoDate,
+        tags: tags,
       });
     } else {
       client.models.Video.create({
@@ -150,6 +185,7 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
         name: videoName,
         clips: clips,
         date: videoDate,
+        tags: tags,
       });
     }
     onCancel();
@@ -223,6 +259,37 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
               Current Clip End:{" "}
               {clipEnd !== null ? clipEnd!.toFixed(2) + "s" : "N/A"}
             </p>
+          </div>
+          <div className="tags-section">
+            <h3>Tags</h3>
+            <div className="tag-inputs">
+              <input
+                type="text"
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                placeholder="Add new tag"
+              />
+              <button onClick={handleAddTag}>Add Tag</button>
+              <select
+                onChange={(e) => handleSelectExistingTag(e.target.value)}
+                value=""
+              >
+                <option value="">Select existing tag</option>
+                {allTags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="selected-tags">
+              {tags.map((tag) => (
+                <span key={tag} className="tag">
+                  {tag}
+                  <button onClick={() => handleRemoveTag(tag)}>×</button>
+                </span>
+              ))}
+            </div>
           </div>
           <div className="action-buttons">
             <button onClick={handleSave}>Save Video and Clips</button>

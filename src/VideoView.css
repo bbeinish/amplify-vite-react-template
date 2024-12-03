@@ -52,3 +52,40 @@
   padding: 1rem;
   border-left: 1px solid #ccc;
 }
+
+.tags-section {
+  margin: 20px 0;
+}
+
+.tag-inputs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background-color: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag button {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.tag button:hover {
+  color: #ff0000;
+}

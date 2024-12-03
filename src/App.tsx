@@ -28,6 +28,7 @@ function App() {
       createdAt: "",
       updatedAt: "",
       date: new Date().toISOString().split("T")[0],
+      tags: [],
     };
     setSelectedVideo(video);
   };
@@ -59,13 +60,17 @@ function App() {
       <h1>My Videos</h1>
       <button onClick={handleNewVideo}>Create New Video</button>
       <div className="video-list">
-        {videos.map((video: Schema["Video"]["type"], index: number) => (
-          <div key={index} className="video-item">
-            <button onClick={() => handleSelectVideo(video)}>
-              {video.name}
-            </button>
-          </div>
-        ))}
+        {videos
+          .sort(
+            (a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime()
+          )
+          .map((video: Schema["Video"]["type"], index: number) => (
+            <div key={index} className="video-item">
+              <button onClick={() => handleSelectVideo(video)}>
+                {video.name}
+              </button>
+            </div>
+          ))}
       </div>
       <button onClick={signOut}>Sign out</button>
     </div>
