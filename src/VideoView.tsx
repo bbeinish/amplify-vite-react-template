@@ -166,6 +166,28 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
+  const handleClipDownload = async (clip: Schema["Clip"]["type"]) => {
+    try {
+      const response = await fetch("/api/download-clip", {
+        method: "POST",
+        body: JSON.stringify({
+          videoUrl: videoSrc,
+          startTime: clip.startTime,
+          endTime: clip.endTime,
+          clipName: clip.name,
+        }),
+      });
+
+      const { downloadUrl } = await response.json();
+
+      // Trigger download
+      window.location.href = downloadUrl;
+    } catch (error) {
+      console.error("Download error:", error);
+      // Add user feedback
+    }
+  };
+
   const handleSave = () => {
     if (!videoName || !videoSrc) {
       alert("Please provide a video name and load a video first");
@@ -311,6 +333,7 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
                         s, End - {clip.endTime!.toFixed(2)}s
                       </span>
                       <button onClick={() => handleDeleteClip(index)}>X</button>
+                      <button onClick={() => handleClipDownload(clip)}></button>
                     </li>
                   ))}
             </ul>
