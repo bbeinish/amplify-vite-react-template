@@ -34,6 +34,9 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
   const [videoName, setVideoName] = useState<string | null | undefined>(
     initialVideo.name
   );
+  const [videoDate, setVideoDate] = useState<string | null | undefined>(
+    initialVideo.date
+  );
   const videoNode = useRef<HTMLVideoElement | null>(null);
   const player = useRef<Player | null>(null);
 
@@ -139,12 +142,14 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
         id: initialVideo.id,
         name: videoName,
         clips: clips,
+        date: videoDate,
       });
     } else {
       client.models.Video.create({
         url: videoSrc,
         name: videoName,
         clips: clips,
+        date: videoDate,
       });
     }
     onCancel();
@@ -152,85 +157,96 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
 
   return (
     <div className="main-container">
-      <div className="video-container">
-        <div>
-          <input
-            type="text"
-            placeholder="Video Name"
-            value={videoName || ""}
-            onChange={(e) => setVideoName(e.target.value)}
-          />
-          {!initialVideo.url && !videoSrc && (
-            <button
-              onClick={() => {
-                const url = prompt("Enter video URL:");
-                if (url) handleLink(url);
-              }}
-            >
-              Link Video
-            </button>
-          )}
-        </div>
-        {videoSrc && (
-          <div data-vjs-player>
-            <video
-              ref={(node) => {
-                videoNode.current = node;
-                if (node) {
-                  setupPlayer();
-                }
-              }}
-              id="video-player"
-              className="video-js vjs-default-skin"
-              controls
-              preload="auto"
-              width="720"
-              height="420"
-            />
-          </div>
+      <div className="video-header">
+        <input
+          type="text"
+          placeholder="Video Name"
+          value={videoName || ""}
+          onChange={(e) => setVideoName(e.target.value)}
+          className="video-input"
+        />
+        <input
+          type="date"
+          value={videoDate || ""}
+          onChange={(e) => setVideoDate(e.target.value)}
+          className="video-input"
+        />
+        {!initialVideo.url && !videoSrc && (
+          <button
+            onClick={() => {
+              const url = prompt("Enter video URL:");
+              if (url) handleLink(url);
+            }}
+            className="video-button"
+          >
+            Link Video
+          </button>
         )}
-        {videoSrc && (
-          <div>
-            <button onClick={handleSetClipStart}>Set Clip Start</button>
-            <button onClick={handleSetClipEnd}>Set Clip End</button>
-            <input
-              type="text"
-              placeholder="Clip Name"
-              value={clipName}
-              onChange={(e) => setClipName(e.target.value)}
-            />
-            <button onClick={handleSaveClip}>Save Clip</button>
-          </div>
-        )}
-        <div>
-          <p>
-            Current Clip Start:{" "}
-            {clipStart !== null ? clipStart!.toFixed(2) + "s" : "N/A"} | Current
-            Clip End: {clipEnd !== null ? clipEnd!.toFixed(2) + "s" : "N/A"}
-          </p>
-        </div>
-        <div className="action-buttons">
-          <button onClick={handleSave}>Save Video and Clips</button>
-          <button onClick={onCancel}>Cancel</button>
-        </div>
       </div>
-      <div className="sidebar">
-        <div>
-          <h2>Clips</h2>
-          <ul>
-            {clips &&
-              clips
-                .sort((a, b) => a.startTime! - b.startTime!)
-                .map((clip, index) => (
-                  <li key={index}>
-                    <span onClick={() => handleClipClick(clip)}>
-                      <b>{clip.name}:</b> Start - {clip.startTime!.toFixed(2)}s,
-                      End - {clip.endTime!.toFixed(2)}s
-                    </span>
-                    <button onClick={() => handleDeleteClip(index)}>X</button>
-                  </li>
-                ))}
-          </ul>
+      <div className="video-container">
+        <div className="video-content">
+          {videoSrc && (
+            <div data-vjs-player>
+              <video
+                ref={(node) => {
+                  videoNode.current = node;
+                  if (node) {
+                    setupPlayer();
+                  }
+                }}
+                id="video-player"
+                className="video-js vjs-default-skin"
+                controls
+                preload="auto"
+                width="720"
+                height="420"
+              />
+            </div>
+          )}
+          {videoSrc && (
+            <div>
+              <button onClick={handleSetClipStart}>Set Clip Start</button>
+              <button onClick={handleSetClipEnd}>Set Clip End</button>
+              <input
+                type="text"
+                placeholder="Clip Name"
+                value={clipName}
+                onChange={(e) => setClipName(e.target.value)}
+              />
+              <button onClick={handleSaveClip}>Save Clip</button>
+            </div>
+          )}
+          <div>
+            <p>
+              Current Clip Start:{" "}
+              {clipStart !== null ? clipStart!.toFixed(2) + "s" : "N/A"} |
+              Current Clip End:{" "}
+              {clipEnd !== null ? clipEnd!.toFixed(2) + "s" : "N/A"}
+            </p>
+          </div>
+          <div className="action-buttons">
+            <button onClick={handleSave}>Save Video and Clips</button>
+            <button onClick={onCancel}>Cancel</button>
+          </div>
+        </div>
+        <div className="sidebar">
+          <div>
+            <h2>Clips</h2>
+            <ul>
+              {clips &&
+                clips
+                  .sort((a, b) => a.startTime! - b.startTime!)
+                  .map((clip, index) => (
+                    <li key={index}>
+                      <span onClick={() => handleClipClick(clip)}>
+                        <b>{clip.name}:</b> Start - {clip.startTime!.toFixed(2)}
+                        s, End - {clip.endTime!.toFixed(2)}s
+                      </span>
+                      <button onClick={() => handleDeleteClip(index)}>X</button>
+                    </li>
+                  ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>

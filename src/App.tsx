@@ -27,6 +27,7 @@ function App() {
       id: "",
       createdAt: "",
       updatedAt: "",
+      date: new Date().toISOString().split("T")[0],
     };
     setSelectedVideo(video);
   };
