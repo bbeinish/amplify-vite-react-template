@@ -17,7 +17,10 @@ interface VideoViewProps {
 
 function VideoView({ initialVideo, onCancel }: VideoViewProps) {
   const [videoSrc, setVideoSrc] = useState<string | null | undefined>(
-    initialVideo.url
+    initialVideo.url?.includes("youtube.com") ||
+      initialVideo.url?.includes("youtu.be")
+      ? initialVideo.url
+      : null
   );
   const [videoType, setVideoType] = useState<string>(() => {
     if (
@@ -72,6 +75,33 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
           clip !== null && clip !== undefined
       );
       setClips(validClips);
+
+      if (
+        initialVideo.url &&
+        !initialVideo.url.includes("youtube.com") &&
+        !initialVideo.url.includes("youtu.be")
+      ) {
+        if (!videoSrc) {
+          const fileInput = document.createElement("input");
+          fileInput.type = "file";
+          fileInput.accept = "video/*";
+          fileInput.onchange = (e) => {
+            const input = e.target as HTMLInputElement;
+            if (input.files?.[0]) {
+              handleFileUpload({
+                target: input,
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+          };
+          fileInput.click();
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (videoSrc) {
+      setupPlayer();
     }
 
     return () => {
@@ -167,25 +197,7 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
   };
 
   const handleClipDownload = async (clip: Schema["Clip"]["type"]) => {
-    try {
-      const response = await fetch("/api/download-clip", {
-        method: "POST",
-        body: JSON.stringify({
-          videoUrl: videoSrc,
-          startTime: clip.startTime,
-          endTime: clip.endTime,
-          clipName: clip.name,
-        }),
-      });
-
-      const { downloadUrl } = await response.json();
-
-      // Trigger download
-      window.location.href = downloadUrl;
-    } catch (error) {
-      console.error("Download error:", error);
-      // Add user feedback
-    }
+    console.log(clip);
   };
 
   const handleSave = () => {
@@ -214,6 +226,17 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
     onCancel();
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Create a blob URL for the video file
+    const blobUrl = URL.createObjectURL(file);
+    setVideoSrc(blobUrl);
+    setVideoType(file.type || "video/mp4");
+    setVideoName(file.name);
+  };
+
   return (
     <div className="main-container">
       <div className="video-header">
@@ -231,15 +254,23 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
           className="video-input"
         />
         {!initialVideo.url && !videoSrc && (
-          <button
-            onClick={() => {
-              const url = prompt("Enter video URL:");
-              if (url) handleLink(url);
-            }}
-            className="video-button"
-          >
-            Link Video
-          </button>
+          <div className="video-buttons">
+            <button
+              onClick={() => {
+                const url = prompt("Enter YouTube URL:");
+                if (url) handleLink(url);
+              }}
+              className="video-button"
+            >
+              Link YouTube Video
+            </button>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleFileUpload}
+              className="video-button"
+            />
+          </div>
         )}
       </div>
       <div className="video-container">
@@ -333,7 +364,9 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
                         s, End - {clip.endTime!.toFixed(2)}s
                       </span>
                       <button onClick={() => handleDeleteClip(index)}>X</button>
-                      <button onClick={() => handleClipDownload(clip)}></button>
+                      <button onClick={() => handleClipDownload(clip)}>
+                        Download
+                      </button>
                     </li>
                   ))}
             </ul>
