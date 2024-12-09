@@ -1,3 +1,3 @@
-export const handler = async (event) => {
+export const handler = async (event: any) => {
   console.log(event);
 };
