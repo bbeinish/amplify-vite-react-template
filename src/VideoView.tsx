@@ -8,6 +8,7 @@ import { generateClient } from "aws-amplify/data";
 import "./VideoView.css";
 
 const client = generateClient<Schema>();
+client.functions;
 
 interface VideoViewProps {
   initialVideo: Schema["Video"]["type"];
@@ -199,13 +200,10 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
   const handleClipDownload = async (clip: Schema["Clip"]["type"]) => {
     console.log(clip);
     try {
-      const response = await fetch("/api/downloadClip", {
-        method: "POST",
-        body: JSON.stringify({
-          videoUrl: videoSrc,
-          startTime: clip.startTime,
-          endTime: clip.endTime,
-        }),
+      const response = await client.queries.downloadClip({
+        videoUrl: videoSrc,
+        startTime: clip.startTime,
+        endTime: clip.endTime,
       });
       console.log(response);
     } catch (error) {

@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { downloadClip } from "../functions/downloadClip/resource";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -26,6 +27,16 @@ const schema = a.schema({
       tags: a.string().required().array(),
     })
     .authorization((allow) => [allow.owner()]),
+  downloadClip: a
+    .query()
+    .arguments({
+      videoUrl: a.string(),
+      startTime: a.float(),
+      endTime: a.float(),
+    })
+    .returns(a.boolean())
+    .handler(a.handler.function(downloadClip))
+    .authorization((allow) => [allow.authenticated()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
