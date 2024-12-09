@@ -8,7 +8,6 @@ import { generateClient } from "aws-amplify/data";
 import "./VideoView.css";
 
 const client = generateClient<Schema>();
-client.functions;
 
 interface VideoViewProps {
   initialVideo: Schema["Video"]["type"];
