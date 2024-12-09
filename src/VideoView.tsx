@@ -198,6 +198,19 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
 
   const handleClipDownload = async (clip: Schema["Clip"]["type"]) => {
     console.log(clip);
+    try {
+      const response = await fetch("/api/downloadClip", {
+        method: "POST",
+        body: JSON.stringify({
+          videoUrl: videoSrc,
+          startTime: clip.startTime,
+          endTime: clip.endTime,
+        }),
+      });
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleSave = () => {
