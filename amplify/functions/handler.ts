@@ -1,3 +1,5 @@
-export const handler = async (event: any) => {
+import type { Handler } from "aws-lambda";
+
+export const handler: Handler = async (event) => {
   console.log(event);
 };
