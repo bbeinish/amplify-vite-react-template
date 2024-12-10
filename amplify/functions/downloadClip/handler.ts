@@ -1,9 +1,11 @@
 import { Schema } from "../../data/resource";
 import { uploadData } from "@aws-amplify/storage";
 import ytdl from "ytdl-core";
+import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 
+ffmpeg.setFfmpegPath(ffmpegPath.path);
 export const handler: Schema["downloadClip"]["functionHandler"] = async (
   event
 ) => {
