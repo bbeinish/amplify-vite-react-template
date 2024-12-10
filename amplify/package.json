@@ -3,5 +3,8 @@
   "dependencies": {
     "fluent-ffmpeg": "^2.1.3",
     "ytdl-core": "^4.11.5"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.27"
   }
 }
