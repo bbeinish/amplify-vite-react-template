@@ -18,7 +18,8 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
   });
 
   const passThrough = new PassThrough();
-  ffmpeg(videoStream).toFormat("mp4").pipe(passThrough);
+  const streamResult = ffmpeg(videoStream).toFormat("mp4").pipe(passThrough);
+  console.log(streamResult);
 
   const chunks: Uint8Array[] = [];
   for await (const chunk of passThrough) {
