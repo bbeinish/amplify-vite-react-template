@@ -22,6 +22,7 @@
     "video.js": "^8.20.0",
     "videojs": "^1.0.0",
     "videojs-youtube": "^3.0.1",
+    "youtube-dl-exec": "^3.0.10",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
