@@ -19,11 +19,13 @@
     "react-video-js-player": "^1.1.1",
     "video.js": "^8.20.0",
     "videojs": "^1.0.0",
-    "videojs-youtube": "^3.0.1"
+    "videojs-youtube": "^3.0.1",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.5.0",
     "@aws-amplify/backend-cli": "^1.2.9",
+    "@types/fluent-ffmpeg": "^2.1.27",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
