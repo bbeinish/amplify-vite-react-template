@@ -19,6 +19,8 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
     },
   });
 
+  console.log("Video Stream", videoStream);
+
   // const passThrough = new PassThrough();
   // const streamResult = ffmpeg(videoStream).toFormat("mp4").pipe(passThrough);
   // console.log(streamResult);
@@ -28,6 +30,8 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
     chunks.push(chunk);
   }
   const ret = Buffer.concat(chunks);
+
+  console.log("Ret", ret);
 
   uploadData({
     path: "savedClips/test",
