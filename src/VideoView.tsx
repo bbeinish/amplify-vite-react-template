@@ -6,6 +6,8 @@ import "videojs-youtube";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import "./VideoView.css";
+import { uploadData } from "aws-amplify/storage";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
 
 const client = generateClient<Schema>();
 
@@ -198,15 +200,56 @@ function VideoView({ initialVideo, onCancel }: VideoViewProps) {
 
   const handleClipDownload = async (clip: Schema["Clip"]["type"]) => {
     console.log(clip);
-    try {
-      const response = await client.queries.downloadClip({
-        videoUrl: videoSrc,
-        startTime: clip.startTime,
-        endTime: clip.endTime,
+    if (videoSrc?.includes("youtube.com") || videoSrc?.includes("youtu.be")) {
+      try {
+        const response = await client.queries.downloadClip({
+          videoUrl: videoSrc,
+          startTime: clip.startTime,
+          endTime: clip.endTime,
+        });
+        console.log(response);
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      const videoElement = player.current?.tech().el() as HTMLVideoElement;
+      const videoBlob = await fetch(videoElement.src).then((r) => r.blob());
+
+      // Initialize FFmpeg
+      const ffmpeg = new FFmpeg();
+      await ffmpeg.load();
+
+      // Write input file
+      await ffmpeg.writeFile(
+        "input.mp4",
+        new Uint8Array(await videoBlob.arrayBuffer())
+      );
+
+      // Cut the video
+      await ffmpeg.exec([
+        "-ss",
+        clip.startTime!.toString(),
+        "-i",
+        "input.mp4",
+        "-t",
+        (clip.endTime! - clip.startTime!).toString(),
+        "-c",
+        "copy",
+        "output.mp4",
+      ]);
+
+      // Get the trimmed video
+      const data = await ffmpeg.readFile("output.mp4");
+      const trimmedBlob = new Blob([data], { type: "video/mp4" });
+      const trimmedFile = new File([trimmedBlob], `${clip.name}.mp4`, {
+        type: "video/mp4",
       });
-      console.log(response);
-    } catch (error) {
-      console.error(error);
+
+      const result = await uploadData({
+        path: "allClips/" + videoName + "/" + clip.name + ".mp4",
+        data: trimmedFile,
+      });
+      console.log(result);
     }
   };
 
