@@ -14,6 +14,7 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
   console.log(event.arguments.videoUrl);
   const { videoUrl } = event.arguments;
 
+  // I will probably have to output to a specific path like "tmp/"
   const outputPath = "savedClips/test";
   await youtubeDl(videoUrl!, {
     format: "mp4",
@@ -28,7 +29,7 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
 
   const stream = createReadStream(outputPath);
 
-  console.log("Stream", stream);
+  console.log("Stream", stream); // Will probably come back with object. This is to make sure it's not null
 
   const chunks: Uint8Array[] = [];
   for await (const chunk of stream) {

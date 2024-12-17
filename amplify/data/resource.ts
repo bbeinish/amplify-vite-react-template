@@ -34,7 +34,7 @@ const schema = a.schema({
       startTime: a.float(),
       endTime: a.float(),
     })
-    .returns(a.boolean())
+    .returns(a.boolean()) // This will change to a string eventually. The string will be the link to download the clip from S3.
     .handler(a.handler.function(downloadClip))
     .authorization((allow) => [allow.authenticated()]),
 });
