@@ -5,7 +5,7 @@ import { createReadStream } from "fs";
 // import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 // import ffmpeg from "fluent-ffmpeg";
 // import { PassThrough } from "stream";
-import youtubeDl from "youtube-dl-exec";
+import youtubeDl, { exec } from "youtube-dl-exec";
 
 export const handler: Schema["downloadClip"]["functionHandler"] = async (
   event
@@ -15,11 +15,18 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
   const { videoUrl } = event.arguments;
 
   // I will probably have to output to a specific path like "tmp/"
-  const outputPath = "savedClips/test";
-  await youtubeDl(videoUrl!, {
-    format: "mp4",
-    output: outputPath,
-  });
+  const outputPath = "/tmp/savedClips/test";
+
+  try {
+    await youtubeDl(videoUrl!, {
+      format: "mp4",
+      output: outputPath,
+    });
+  } catch (error) {
+    console.log("Error on trying with youtubeDl", error);
+  }
+
+  exec(`/opt/bin/yt-dlp ${videoUrl} -o ${outputPath}`);
 
   console.log("Output Path", outputPath);
 
