@@ -5,7 +5,7 @@ import { createReadStream } from "fs";
 // import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 // import ffmpeg from "fluent-ffmpeg";
 // import { PassThrough } from "stream";
-import youtubeDl, { exec } from "youtube-dl-exec";
+import { exec } from "child_process";
 
 export const handler: Schema["downloadClip"]["functionHandler"] = async (
   event
@@ -17,16 +17,7 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
   // I will probably have to output to a specific path like "tmp/"
   const outputPath = "/tmp/savedClips/test";
 
-  try {
-    await youtubeDl(videoUrl!, {
-      format: "mp4",
-      output: outputPath,
-    });
-  } catch (error) {
-    console.log("Error on trying with youtubeDl", error);
-  }
-
-  exec(`/opt/bin/yt-dlp ${videoUrl} -o ${outputPath}`);
+  await downloadVideo(videoUrl!, outputPath);
 
   console.log("Output Path", outputPath);
 
@@ -47,7 +38,7 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
   console.log("Ret", ret);
 
   uploadData({
-    path: "savedClips/test",
+    path: outputPath,
     data: ret,
     options: {
       contentType: "video/mp4",
@@ -55,4 +46,18 @@ export const handler: Schema["downloadClip"]["functionHandler"] = async (
   });
 
   return true;
+};
+
+const downloadVideo = (url: string, outputPath: string) => {
+  return new Promise((resolve, reject) => {
+    exec(`/opt/bin/yt-dlp ${url} -o ${outputPath}`, (error, stdout, stderr) => {
+      if (error) {
+        reject(`Error: ${error.message}`);
+      } else if (stderr) {
+        reject(`Stderr: ${stderr}`);
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
 };
